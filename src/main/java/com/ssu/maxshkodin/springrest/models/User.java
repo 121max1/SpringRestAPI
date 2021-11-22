@@ -1,8 +1,11 @@
 package com.ssu.maxshkodin.springrest.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import org.hibernate.validator.constraints.Length;
 
 import javax.persistence.*;
+import javax.validation.constraints.Email;
+import javax.validation.constraints.NotNull;
 import java.util.List;
 
 @Entity
@@ -14,18 +17,25 @@ public abstract class User {
     private int id;
 
     @Column(name = "fullName")
+    @NotNull(message = "Please provide full name")
     private String fullName;
 
     @Column(name = "phoneNumber")
+    @NotNull(message = "Please provide phone number")
     private String phoneNumber;
 
     @Column(name = "email")
+    @NotNull(message = "Please provide email")
+    @Email
     private String email;
 
     @Column(name = "login")
+    @NotNull(message = "Please provide login")
     private String login;
 
     @Column(name = "password")
+    @NotNull(message = "Please provide password")
+    @Length(min = 8)
     private String password;
 
     @JsonIgnore

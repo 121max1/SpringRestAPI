@@ -19,7 +19,6 @@ import java.util.Set;
 public class Client extends User {
 
     @OneToMany(mappedBy="client")
-    @JsonBackReference
     private Set<Record> records;
 
     public Client(String fullName, String phoneNumber,String email, String login, String password) {

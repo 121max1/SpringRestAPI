@@ -19,7 +19,6 @@ public class Doctor extends User {
     private Speciality speciality;
 
     @OneToMany(mappedBy="doctor", fetch = FetchType.EAGER)
-    @JsonBackReference
     private Set<Record> records;
 
     public Doctor(String fullName, String phoneNumber, String email, String login, String password, Speciality speciality) {

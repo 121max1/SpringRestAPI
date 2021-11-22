@@ -11,8 +11,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.GregorianCalendar;
-import java.util.List;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @RestController
@@ -34,12 +36,16 @@ public class ClientController {
     @GetMapping(value = "/doctors")
     public ResponseEntity<List<Doctor>> getDoctors(){
         List<Doctor> doctors = doctorService.getAll();
-        return doctors !=null && !doctors.isEmpty()
-                ? new ResponseEntity<>(doctors, HttpStatus.OK)
+        List<Doctor> doctorCopy = new ArrayList<>(doctors);
+        for(Doctor doctor:doctorCopy){
+            doctor.setPassword("");
+        }
+        return !doctors.isEmpty()
+                ? new ResponseEntity<>(doctorCopy, HttpStatus.OK)
                 : new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
 
-    @GetMapping(value = "/clientRecords")
+    @GetMapping(value = "/records")
     public ResponseEntity<List<Record>> getRecords(){
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         Client client = clientService.getClientByUsername(username);
@@ -51,11 +57,17 @@ public class ClientController {
 
     @PostMapping(value = "/addRecord")
     public ResponseEntity<?> addRecord(@RequestParam(value="doctorId") Integer doctorId,
-                                      @RequestParam(value= "gap") Long gap,
-                                      @RequestParam(value="clientId") Integer clientId){
-        Record record = new Record();
+                                      @RequestParam(value= "gap") String gap,
+                                      @RequestParam(value="clientId") Integer clientId) throws Exception {
+        DateFormat df = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss Z");
+        Date parsed = df.parse(gap);
         GregorianCalendar date = new GregorianCalendar();
-        date.setTimeInMillis(gap);
+        date.setTime(parsed);
+        Record record = new Record();
+        if(recordService.isRecordExists(date))
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        if(!recordService.isValidTimeForRecord(date))
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         record.setRecordDateTime(date);
         record.setClient(clientService.getById(clientId));
         record.setDoctor(doctorService.getById(doctorId));
@@ -63,7 +75,8 @@ public class ClientController {
         appointment.setDescription("");
         appointment.setRecord(record);
         appointment.setExecutionStatus(ExecutionStatus.IN_PROGRESS);
-        record.setAppointment(appointmentService.add(appointment));
+        Appointment addedAppointment = appointmentService.add(appointment);
+        record.setAppointment(addedAppointment);
         recordService.add(record);
         return new ResponseEntity<>(HttpStatus.CREATED);
     }
@@ -81,6 +94,45 @@ public class ClientController {
                 : new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
 
+    @GetMapping(value = "/gapsByDoctorOnDay/{id}")
+    public ResponseEntity<List<GregorianCalendar>> getGapsByDoctorOnDay(@PathVariable Integer id){
+        Doctor doctor = doctorService.getById(id);
+        GregorianCalendar date = new GregorianCalendar();
+        List<GregorianCalendar> gaps = recordService.GetFreeGapsByDoctorOnDay(doctor,date);
+        return new ResponseEntity<>(gaps,HttpStatus.OK);
+    }
 
+    @GetMapping(value = "/gapsByDoctorOnWeek/{id}")
+    public ResponseEntity<List<GregorianCalendar>> getGapsByDoctorOnWeek(@PathVariable Integer id){
+        Doctor doctor = doctorService.getById(id);
+        GregorianCalendar date = new GregorianCalendar();
+        List<GregorianCalendar> gaps = recordService.GetFreeGapsByDoctorOnWeek(doctor,date);
+        return new ResponseEntity<>(gaps,HttpStatus.OK);
+    }
+
+    @GetMapping(value = "/gapsBySpecialityOnDay")
+    public ResponseEntity<Map<Integer, List<GregorianCalendar>>> getGapsBySpecialityOnDay(@RequestParam String speciality){
+        Speciality specialityDoctor = Speciality.valueOf(speciality);
+        GregorianCalendar date = new GregorianCalendar();
+        date.set(Calendar.DAY_OF_MONTH,date.get(Calendar.DAY_OF_MONTH)+1);
+        Map<Integer, List<GregorianCalendar>> doctorTimeMap = new HashMap<>();
+        for(Map.Entry<Doctor,List<GregorianCalendar>> entry :recordService.GetFreeGapsByDoctorTypeOnDay(specialityDoctor, date).entrySet()){
+            doctorTimeMap.put(entry.getKey().getId(),entry.getValue());
+        }
+        return new ResponseEntity<>(doctorTimeMap,HttpStatus.OK);
+
+    }
+
+    @GetMapping(value = "/gapsBySpecialityOnWeek")
+    public ResponseEntity<Map<Integer, List<GregorianCalendar>>> getGapsBySpecialityOnWeek(@RequestParam String speciality){
+        Speciality specialityDoctor = Speciality.valueOf(speciality);
+        GregorianCalendar date = new GregorianCalendar();
+        Map<Integer, List<GregorianCalendar>> doctorTimeMap = new HashMap<>();
+        for(Map.Entry<Doctor,List<GregorianCalendar>> entry :recordService.GetFreeGapsByDoctorTypeOnWeek(specialityDoctor, date).entrySet()){
+            doctorTimeMap.put(entry.getKey().getId(),entry.getValue());
+        }
+        return new ResponseEntity<>(doctorTimeMap,HttpStatus.OK);
+
+    }
 
 }

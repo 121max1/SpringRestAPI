@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 
 import javax.persistence.*;
+import javax.validation.constraints.NotNull;
 import java.util.GregorianCalendar;
 
 @Entity
@@ -17,13 +18,13 @@ public class Record {
     private int id;
 
     @ManyToOne
-    @JsonManagedReference
     @JoinColumn(name="doctor_id", nullable=false)
+    @NotNull
     private Doctor doctor;
 
     @ManyToOne
-    @JsonManagedReference
     @JoinColumn(name="client_id", nullable=false)
+    @NotNull
     private Client client;
 
     private GregorianCalendar recordDateTime;

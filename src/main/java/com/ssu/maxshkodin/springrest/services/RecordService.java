@@ -23,9 +23,13 @@ public interface RecordService {
 
     List<Record> GetFutureRecordsByClient(Client client);
 
-    Record add(Record record);
+    Record add(Record record) throws Exception;
 
     void delete(Record record);
+
+    boolean isRecordExists(GregorianCalendar date);
+
+    boolean isValidTimeForRecord(GregorianCalendar time);
 
     List<Record> getRecordsByClient(Client client);
 

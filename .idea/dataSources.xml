@@ -8,5 +8,19 @@
       <jdbc-url>jdbc:h2:C:\Users\Максим\Desktop\Новая папка\HospitalDB\hospitalDb</jdbc-url>
       <working-dir>$ProjectFileDir$</working-dir>
     </data-source>
+    <data-source source="LOCAL" name="H2 - hospitalDb [2]" uuid="7f60d156-75ac-41b0-9a1f-69eada7d572f">
+      <driver-ref>h2.unified</driver-ref>
+      <synchronize>true</synchronize>
+      <jdbc-driver>org.h2.Driver</jdbc-driver>
+      <jdbc-url>jdbc:h2:file:$PROJECT_DIR$/../../../../hospitalDb/hospitalDb</jdbc-url>
+      <working-dir>$ProjectFileDir$</working-dir>
+    </data-source>
+    <data-source source="LOCAL" name="hospitalDb" uuid="928446de-1b4b-4a11-9cdb-3746eba669d4">
+      <driver-ref>h2.unified</driver-ref>
+      <synchronize>true</synchronize>
+      <jdbc-driver>org.h2.Driver</jdbc-driver>
+      <jdbc-url>jdbc:h2:file:$PROJECT_DIR$/../../../../hospitalDb/hospitalDb</jdbc-url>
+      <working-dir>$ProjectFileDir$</working-dir>
+    </data-source>
   </component>
 </project>

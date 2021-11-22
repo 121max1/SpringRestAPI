@@ -14,6 +14,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -35,16 +36,24 @@ public class AdminController {
     @GetMapping("/clients")
     public ResponseEntity<List<Client>> getClients(){
         List<Client> clients = clientService.getAll();
+        List<Client> clientCopy = new ArrayList<>(clients);
+        for(Client client:clientCopy){
+            client.setPassword("");
+        }
         return clients!=null && !clients.isEmpty()
-                ? new ResponseEntity<>(clients, HttpStatus.OK)
+                ? new ResponseEntity<>(clientCopy,HttpStatus.OK)
                 : new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
 
     @GetMapping("/doctors")
     public ResponseEntity<List<Doctor>> getDoctors(){
         List<Doctor> doctors = doctorService.getAll();
+        List<Doctor> doctorCopy = new ArrayList<>(doctors);
+        for(Doctor doctor:doctorCopy){
+            doctor.setPassword("");
+        }
         return doctors!=null && !doctors.isEmpty()
-                ? new ResponseEntity<>(doctors, HttpStatus.OK)
+                ? new ResponseEntity<>(doctorCopy, HttpStatus.OK)
                 : new ResponseEntity<>(HttpStatus.NOT_FOUND);
 
     }

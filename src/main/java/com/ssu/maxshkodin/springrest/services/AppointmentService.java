@@ -18,4 +18,6 @@ public interface AppointmentService{
 
     List<Appointment> getByDoctorId(int id);
 
+    void delete(Appointment appointment);
+
 }

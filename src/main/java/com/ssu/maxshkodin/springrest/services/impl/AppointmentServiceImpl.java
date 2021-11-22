@@ -43,5 +43,10 @@ public class AppointmentServiceImpl implements AppointmentService {
         return appointmentRepository.findAll().stream().filter(a->a.getRecord().getDoctor().getId() == id).collect(Collectors.toList());
     }
 
+    @Override
+    public void delete(Appointment appointment) {
+        appointmentRepository.delete(appointment);
+    }
+
 
 }

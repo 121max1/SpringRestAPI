@@ -3,6 +3,7 @@ package com.ssu.maxshkodin.springrest.controller;
 
 import com.ssu.maxshkodin.springrest.models.Appointment;
 import com.ssu.maxshkodin.springrest.models.Doctor;
+import com.ssu.maxshkodin.springrest.models.ExecutionStatus;
 import com.ssu.maxshkodin.springrest.models.Record;
 import com.ssu.maxshkodin.springrest.services.AppointmentService;
 import com.ssu.maxshkodin.springrest.services.DoctorService;
@@ -40,9 +41,11 @@ public class DoctorController {
 
     @PutMapping(value = "/appointments/update/{id}")
     public ResponseEntity<?> updateAppointment(@PathVariable Integer id,
-                                              @RequestParam(value = "description") String description){
+                                               @RequestParam(value = "description") String description,
+                                               @RequestParam(value = "status") ExecutionStatus status){
         Appointment appointment = appointmentService.getById(id);
         appointment.setDescription(description);
+        appointment.setExecutionStatus(status);
         appointmentService.update(appointment);
         return new ResponseEntity<>(HttpStatus.OK);
     }

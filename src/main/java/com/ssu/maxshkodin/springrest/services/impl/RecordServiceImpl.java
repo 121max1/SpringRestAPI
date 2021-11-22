@@ -22,55 +22,57 @@ public class RecordServiceImpl implements RecordService {
 
     @Override
     public List<GregorianCalendar> GetFreeGapsByDoctorOnDay(Doctor doctor, GregorianCalendar date) {
-        List<GregorianCalendar> allGapsByDay = new ArrayList<GregorianCalendar>();
-        for(int currentHour = 9; currentHour<21;currentHour++){
-            GregorianCalendar dateToAdd = new GregorianCalendar();
-            dateToAdd.set(date.get(GregorianCalendar.YEAR),
-                    date.get(GregorianCalendar.MONTH),
-                    date.get(GregorianCalendar.DAY_OF_MONTH),currentHour,0);
-            allGapsByDay.add(dateToAdd);
+        List<Record> doctorRecords = recordRepository.findAll().stream()
+                .filter(r->isOneDate(date,r.getRecordDateTime())
+                && r.getDoctor().getId() == doctor.getId())
+                .collect(Collectors.toList());
+        List<GregorianCalendar> gaps = new ArrayList<>();
+        for(int i = 9; i<21;i++){
+            GregorianCalendar timeByGap = new GregorianCalendar(
+                    date.get(Calendar.YEAR),
+                    date.get(Calendar.MONTH),
+                    date.get(Calendar.DAY_OF_MONTH),
+                    i,
+                    0,
+                    0);
+            if(doctorRecords.stream().noneMatch(r->isOneHour(r.getRecordDateTime(),timeByGap)))
+                gaps.add(timeByGap);
         }
-        List<Record> recordsByDoctorOnDay = recordRepository.findAll().
-                stream().
-                filter(record -> record.getRecordDateTime().get(GregorianCalendar.DATE) == date.get(GregorianCalendar.DATE)
-                        && record.getDoctor().getId() ==doctor.getId()).collect(Collectors.toList());
-        for (Record record: recordsByDoctorOnDay) {
-            allGapsByDay.remove(record.getRecordDateTime());
-        }
-        return  allGapsByDay;
+        return gaps;
     }
 
     @Override
-    public List<GregorianCalendar> GetFreeGapsByDoctorOnWeek(Doctor doctor, GregorianCalendar dateFrom) {
-        List<GregorianCalendar> allGapsByDay = new ArrayList<GregorianCalendar>();
-        GregorianCalendar maxDate = new GregorianCalendar(dateFrom.get(GregorianCalendar.YEAR),
-                dateFrom.get(GregorianCalendar.MONTH),
-                dateFrom.get(GregorianCalendar.DAY_OF_MONTH)+7);
+    public List<GregorianCalendar> GetFreeGapsByDoctorOnWeek(Doctor doctor, GregorianCalendar date) {
+        GregorianCalendar maxDate = new GregorianCalendar(date.get(GregorianCalendar.YEAR),
+                date.get(GregorianCalendar.MONTH),
+                date.get(GregorianCalendar.DAY_OF_MONTH)+7);
         List<Record> recordsByDoctorOnWeek = recordRepository.findAll().
                 stream().
-                filter(record -> record.getRecordDateTime().get(GregorianCalendar.DATE) >= dateFrom.get(GregorianCalendar.DATE)
+                filter(record -> record.getRecordDateTime().get(GregorianCalendar.DATE) >= date.get(GregorianCalendar.DATE)
                         && record.getRecordDateTime().get(GregorianCalendar.DATE) <= maxDate.get(GregorianCalendar.DATE)
                         && record.getDoctor().getId() == doctor.getId()).collect(Collectors.toList());
-        for (int i = 0; i < 7; i++) {
-            for (int currentHour = 9; currentHour < 21; currentHour++) {
-                GregorianCalendar dateToAdd = new GregorianCalendar();
-                dateToAdd.set(dateFrom.get(GregorianCalendar.YEAR),
-                        dateFrom.get(GregorianCalendar.MONTH),
-                        dateFrom.get(GregorianCalendar.DAY_OF_MONTH), currentHour, 0);
-                allGapsByDay.add(dateToAdd);
-                dateFrom.add(GregorianCalendar.DAY_OF_MONTH,1);
+        List<GregorianCalendar> gaps = new ArrayList<>();
+        for(int dayOfWeek =0; dayOfWeek<7;dayOfWeek++) {
+            for (int i = 9; i < 21; i++) {
+                GregorianCalendar timeByGap = new GregorianCalendar(
+                        date.get(Calendar.YEAR),
+                        date.get(Calendar.MONTH),
+                        date.get(Calendar.DAY_OF_MONTH),
+                        i,
+                        0,
+                        0);
+                timeByGap.add(Calendar.DAY_OF_MONTH,dayOfWeek);
+                if (recordsByDoctorOnWeek.stream().noneMatch(r -> isOneHour(r.getRecordDateTime(), timeByGap)))
+                    gaps.add(timeByGap);
             }
         }
-        for (Record record: recordsByDoctorOnWeek) {
-            allGapsByDay.remove(record.getRecordDateTime());
-        }
-        return  allGapsByDay;
+        return gaps;
     }
 
     @Override
     public Map<Doctor,List<GregorianCalendar>> GetFreeGapsByDoctorTypeOnDay(Speciality speciality, GregorianCalendar date) {
         List<Record> allRecords = recordRepository.findAll();
-        Map<Doctor,List<GregorianCalendar>> toReturn = new HashMap<Doctor,List<GregorianCalendar>>();
+        Map<Doctor,List<GregorianCalendar>> toReturn = new HashMap<>();
         for (Record record: allRecords) {
             if(record.getDoctor().getSpeciality() == speciality) {
                 toReturn.put(record.getDoctor(), GetFreeGapsByDoctorOnDay(record.getDoctor(),date));
@@ -82,7 +84,7 @@ public class RecordServiceImpl implements RecordService {
     @Override
     public Map<Doctor,List<GregorianCalendar>> GetFreeGapsByDoctorTypeOnWeek(Speciality speciality, GregorianCalendar dateFrom) {
         List<Record> allRecords = recordRepository.findAll();
-        Map<Doctor,List<GregorianCalendar>> toReturn = new HashMap<Doctor,List<GregorianCalendar>>();
+        Map<Doctor,List<GregorianCalendar>> toReturn = new HashMap<>();
         for (Record record: allRecords) {
             if(record.getDoctor().getSpeciality() == speciality) {
                 toReturn.put(record.getDoctor(), GetFreeGapsByDoctorOnWeek(record.getDoctor(),dateFrom));
@@ -98,13 +100,34 @@ public class RecordServiceImpl implements RecordService {
     }
 
     @Override
-    public Record add(Record record) {
+    public Record add(Record record){
         return recordRepository.save(record);
     }
 
     @Override
     public void delete(Record record) {
         recordRepository.delete(record);
+    }
+
+    @Override
+    public boolean isRecordExists(GregorianCalendar date) {
+        List<Record> allRecords = recordRepository.findAll();
+        for(Record record: allRecords){
+            if(record.getRecordDateTime().getTimeInMillis() == date.getTimeInMillis())
+                return true;
+        }
+        return false;
+    }
+
+    public boolean isValidTimeForRecord(GregorianCalendar time){
+        if(time.get(Calendar.MINUTE)!=0 || time.get(Calendar.SECOND)!=0){
+            return false;
+        }
+        GregorianCalendar currentTime = new GregorianCalendar();
+        if(time.getTimeInMillis()<currentTime.getTimeInMillis()){
+           return false;
+        }
+        return true;
     }
 
     @Override
@@ -115,5 +138,13 @@ public class RecordServiceImpl implements RecordService {
     @Override
     public List<Record> getRecordsByDoctor(Doctor doctor) {
         return recordRepository.findAll().stream().filter(r->r.getDoctor().getId() == doctor.getId()).collect(Collectors.toList());
+    }
+
+    private boolean isOneDate(GregorianCalendar date1, GregorianCalendar date2){
+        return date1.get(Calendar.DAY_OF_YEAR) == date2.get(Calendar.DAY_OF_YEAR);
+    }
+
+    private boolean isOneHour(GregorianCalendar time1, GregorianCalendar time2){
+        return time1.get(Calendar.HOUR_OF_DAY) == time2.get(Calendar.HOUR_OF_DAY);
     }
 }
